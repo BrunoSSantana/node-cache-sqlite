@@ -13,28 +13,36 @@ This project is a simple implementation of a cache system using Node.js and SQLi
 - Node.js (version 22.5.0 or higher).
 - SQLite (optional, as Node.js can handle the database creation automatically with native support).
 
-## Installation
+## Run the project
+Clone the repository:
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd sqlite
-   ```
+```bash
+## https
+git clone https://github.com/BrunoSSantana/node-cache-sqlite.git cd sqlite
 
-2. Install dependencies (if any are added in future):
-   ```bash
-   npm install
-   ```
+## github cli
+gh repo clone BrunoSSantana/node-cache-sqlite
+```
 
-3. Start the server:
-   ```bash
-   npm start
-   ```
+Create the db.sqlite file (if it doesn't exist) and start the Docker containers:
 
-4. For development mode (with inspector and file watching):
-   ```bash
-   npm run dev
-   ```
+```bash
+make docker-up
+```
+
+This command will ensure that the db.sqlite file is created if it's missing, and will then build and run the Docker containers.
+
+Stop the server and containers:
+
+```bash
+make docker-down
+```
+
+To completely clean up (remove the database file and all volumes):
+
+```bash
+make clean
+```
 
 ## Usage
 
