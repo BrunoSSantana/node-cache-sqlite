@@ -1,0 +1,15 @@
+GET http://localhost:3000?bruno
+
+###
+
+POST http://localhost:3000
+Content-type: application/json
+
+{
+  "key": "bruno",
+  "value": {
+    "nome": "Bruno",
+    "sobrenome": "Santana",
+    "idade": 27
+  }
+}
