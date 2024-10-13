@@ -88,6 +88,8 @@ Insert or update a key-value pair in the cache with an expiration time.
   }
   ```
 
+After the server is running, you can test the API using the provided requests.http file. This file contains example HTTP requests (GET and POST) and can be used with **Rest Client extension** for making HTTP requests directly from your Visual Studio Code editor.
+
 ## Project Structure
 
 ```
