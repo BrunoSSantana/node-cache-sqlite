@@ -1,11 +1,10 @@
 {
-  "name": "sqlite",
+  "name": "node-cache-sqlite",
   "version": "1.0.0",
   "type": "module",
   "main": "main.js",
   "scripts": {
-    "start": "node --experimental-sqlite --no-warnings src/index.js",
-    "dev": "node --inspect --watch --experimental-sqlite src/index.js"
+    "start": "node --experimental-sqlite --no-warnings src/index.js"
   },
   "keywords": [],
   "author": "",
