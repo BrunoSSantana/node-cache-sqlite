@@ -4,8 +4,4 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - db.sqlite:/app/data/db.sqlite
-
-volumes:
-  db-data:
-    driver: local
+      - ./db.sqlite:/app/db.sqlite
