@@ -1,6 +1,6 @@
 import { once } from "node:events";
 import { createServer } from "node:http";
-import { getValue, setValue } from "./cache-db.js";
+import { getValue, setValue } from "./cache-db/index.js";
 
 export const server = createServer(async (req, res) => {
 	try {
