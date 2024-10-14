@@ -1,4 +1,4 @@
-import { cacheSetup } from "./cache-db.js";
+import { cacheSetup } from "./cache-sqlite-db.js";
 import { server } from "./server.js";
 
 cacheSetup();
