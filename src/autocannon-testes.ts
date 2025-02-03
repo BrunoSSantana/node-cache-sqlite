@@ -3,7 +3,7 @@ import autocannon from "autocannon";
 
 const BASE_URL = "http://localhost:3001";
 const DURATIONS = [30, 60]; // duração de cada teste em segundos
-const CONNECTIONS = [50, 200, 500];
+const CONNECTIONS = [50, 100, 250];
 const TEST_KEYS = ["bruno"];
 const IMPLEMENTATIONS = [
   { name: "SQLite", route: "/sqlite" },
@@ -74,7 +74,7 @@ async function runBenchmark(
 (async () => {
   console.log("🚀 Iniciando benchmark...");
 
-  const benchmarkPromises: Promise<BenchmarkResult>[] = [];
+  const benchmarkPromises: BenchmarkResult[] = [];
 
   // Para cada implementação (SQLite e Redis)
   for (const impl of IMPLEMENTATIONS) {
@@ -92,29 +92,30 @@ async function runBenchmark(
       for (const connections of CONNECTIONS) {
         for (const duration of DURATIONS) {
           // Teste de registro de valores (POST)
-          benchmarkPromises.push(
-            runBenchmark(
-              impl.name,
-              impl.route,
-              "POST",
-              connections,
-              duration,
-              key,
-              postBody,
-            ),
+          const benchmarkResultPost = await runBenchmark(
+            impl.name,
+            impl.route,
+            "POST",
+            connections,
+            duration,
+            key,
+            postBody,
           );
+          benchmarkPromises.push(benchmarkResultPost);
+          console.log(`✅ Teste concluído! - POST ${impl.name} - ${key} - ${connections} conexões - ${duration} segundos`);
 
           // Teste de leitura de valores (GET)
-          benchmarkPromises.push(
-            runBenchmark(
-              impl.name,
-              impl.route,
-              "GET",
-              connections,
-              duration,
-              key,
-            ),
+          const benchmarkResultGet = await runBenchmark(
+            impl.name,
+            impl.route,
+            "GET",
+            connections,
+            duration,
+            key,
           );
+          benchmarkPromises.push(benchmarkResultGet);
+          console.log(`✅ Teste concluído! - GET ${impl.name} - ${key} - ${connections} conexões - ${duration} segundos`);
+
         }
       }
     }
