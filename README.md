@@ -50,7 +50,7 @@ Retrieve data from the cache by passing query parameters.
 
 Example:
 ```http
-GET http://localhost:3000/?sampleKey
+GET http://localhost:3001/?sampleKey
 ```
 
 Response:
@@ -63,7 +63,7 @@ Insert or update a key-value pair in the cache with an expiration time.
 
 Example:
 ```http
-POST http://localhost:3000/
+POST http://localhost:3001/
 content-type: application/json
 {
   "key": "sampleKey",

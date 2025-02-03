@@ -48,7 +48,6 @@ export async function redisSetValue({
     await redisClient.set(key, JSON.stringify(value), {
       EX: expiresAt * 60, // Tempo de expiração em segundos
     });
-    console.log(`✅ Key "${key}" set in Redis (expires in ${expiresAt} min)`);
   } catch (error) {
     console.error(`❌ Error setting key "${key}" in Redis:`, error);
   }

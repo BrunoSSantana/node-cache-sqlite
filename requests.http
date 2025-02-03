@@ -1,8 +1,8 @@
-GET http://localhost:3000?bruno
+GET http://localhost:3001?bruno
 
 ###
 
-POST http://localhost:3000
+POST http://localhost:3001
 Content-type: application/json
 
 {

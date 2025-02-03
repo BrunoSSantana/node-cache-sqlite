@@ -1,5 +1,5 @@
 # Use the official Node.js 22.5 image as base
-FROM node:22.9.0-alpine3.19
+FROM node:23.7.0-alpine3.20
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Expose the port your app runs on
-EXPOSE 3000
+EXPOSE 3001
 
 # Start the application
 CMD ["npm", "start"]
