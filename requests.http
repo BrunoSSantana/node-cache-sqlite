@@ -1,8 +1,8 @@
-GET http://localhost:3001?bruno
+GET http://localhost:3001/redis?bruno
 
 ###
 
-POST http://localhost:3001
+POST http://localhost:3001/redis
 Content-type: application/json
 
 {
