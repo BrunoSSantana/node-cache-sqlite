@@ -1,6 +1,6 @@
 import { once } from "node:events";
 import { createServer } from "node:http";
-import { sqliteGetValue, sqliteSetValue } from "./cache-db";
+import { sqliteGetValue, sqliteSetValue } from "./cache-db/index.ts";
 
 export const server = createServer(async (req, res) => {
   try {

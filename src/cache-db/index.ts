@@ -1,2 +1,2 @@
-export * from "./cache-redis-db";
-export * from "./cache-sqlite-db";
+export * from "./cache-redis-db.ts";
+export * from "./cache-sqlite-db.ts";
