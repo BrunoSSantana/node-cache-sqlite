@@ -78,23 +78,33 @@ After the server is running, you can test the API using the provided requests.ht
 
 ## Project Structure
 ```
-node-cache-sqlite/
-├── src/
-│   ├── cache-db.js      # Handles database operations (get/set values)
-│   ├── server.js        # Starts the HTTP server
-│   └── index.js         # Main entry point
-├── db.sqlite            # SQLite database
-├── package.json         # Project metadata and scripts
-└── README.md            # This file
+└── src
+    ├── autocannon-testes.ts      # Script to run autocannon tests
+    ├── cache-db                  # Cache database implementation
+    │   ├── cache-redis-db.ts     # Redis cache implementation
+    │   ├── cache-sqlite-db.ts    # SQLite cache implementation
+    │   └── index.ts
+    ├── main.ts                   # Main entry point
+    └── server.ts                 # HTTP server
 ```
 
 ## Native SQLite Implementation
 This project was created to test and showcase the native support of SQLite in Node.js, without using external libraries like better-sqlite3 or sqlite3. The goal is to evaluate SQLite's performance and functionality as a lightweight, file-based database in a cache scenario.
 
-## Possible Improvements
-- Add more robust error handling and logging.
-- Implement a proper cache eviction strategy (e.g., LRU - Least Recently Used).
-- Add unit tests for cache functionality.
+## Run Stress Tests
+
+To run the autocannon stress tests, you can use the following command:
+
+```bash
+make docker-up
+```
+This will start container with the SQLite database and redis cache.
+To run the stress tests, you can use the following command:
+
+```bash
+pnpm test:stress
+```
+This will run the autocannon stress test, which will make a lot of requests to the server and measure the performance. The results will be created in the benchmark.md file.
 
 ## License
 This project is licensed under the MIT License.
