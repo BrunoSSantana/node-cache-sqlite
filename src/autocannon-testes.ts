@@ -102,7 +102,9 @@ async function runBenchmark(
             postBody,
           );
           benchmarkPromises.push(benchmarkResultPost);
-          console.log(`✅ Teste concluído! - POST ${impl.name} - ${key} - ${connections} conexões - ${duration} segundos`);
+          console.log(
+            `✅ Teste concluído! - POST ${impl.name} - ${key} - ${connections} conexões - ${duration} segundos`,
+          );
 
           // Teste de leitura de valores (GET)
           const benchmarkResultGet = await runBenchmark(
@@ -114,8 +116,9 @@ async function runBenchmark(
             key,
           );
           benchmarkPromises.push(benchmarkResultGet);
-          console.log(`✅ Teste concluído! - GET ${impl.name} - ${key} - ${connections} conexões - ${duration} segundos`);
-
+          console.log(
+            `✅ Teste concluído! - GET ${impl.name} - ${key} - ${connections} conexões - ${duration} segundos`,
+          );
         }
       }
     }
@@ -149,7 +152,10 @@ _Gerado automaticamente em ${new Date().toLocaleString()}_
 `;
 
   // Salva os resultados em um arquivo Markdown
-  fs.writeFileSync("benchmark-results.md", markdownContent);
+  fs.writeFileSync(
+    `benchmark-results-${new Date().getTime()}.md`,
+    markdownContent,
+  );
 
   console.log(
     "✅ Teste concluído! Resultados salvos em `benchmark-results.md`.",
