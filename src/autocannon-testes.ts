@@ -68,14 +68,79 @@ async function runBenchmark(
 }
 
 /**
- * Executa os benchmarks de maneira sequencial para evitar sobrecarga excessiva no servidor.
+ * Analisa os resultados e encontra a melhor implementação com base no desempenho.
+ */
+function analyzeResults(results: BenchmarkResult[]): string {
+  const groupedByImplementation = results.reduce((acc, result) => {
+    if (!acc[result.implementation]) acc[result.implementation] = [];
+    acc[result.implementation].push(result);
+    return acc;
+  }, {} as Record<string, BenchmarkResult[]>);
+
+  let bestThroughput = { implementation: "", reqPerSec: 0 };
+  let bestLatency = { implementation: "", avgLatency: Infinity };
+  let errorCounts = {} as Record<string, number>;
+  let timeoutCounts = {} as Record<string, number>;
+
+  for (const [implementation, tests] of Object.entries(
+    groupedByImplementation,
+  )) {
+    const avgReqPerSec =
+      tests.reduce((sum, r) => sum + r.requestsPerSecond, 0) / tests.length;
+    const avgLatency =
+      tests.reduce((sum, r) => sum + r.latencyAvg, 0) / tests.length;
+    const totalErrors = tests.reduce((sum, r) => sum + r.errors, 0);
+    const totalTimeouts = tests.reduce((sum, r) => sum + r.timeouts, 0);
+
+    if (avgReqPerSec > bestThroughput.reqPerSec) {
+      bestThroughput = { implementation, reqPerSec: avgReqPerSec };
+    }
+    if (avgLatency < bestLatency.avgLatency) {
+      bestLatency = { implementation, avgLatency };
+    }
+
+    errorCounts[implementation] = totalErrors;
+    timeoutCounts[implementation] = totalTimeouts;
+  }
+
+  // Calcula quanto % mais rápido foi
+  const fastestReqPerSec = bestThroughput.reqPerSec;
+  const improvements = Object.entries(groupedByImplementation)
+    .map(([implementation, tests]) => {
+      const avgReqPerSec =
+        tests.reduce((sum, r) => sum + r.requestsPerSecond, 0) / tests.length;
+      const improvement = ((fastestReqPerSec - avgReqPerSec) / avgReqPerSec) * 100;
+      if(improvement === 0) return null
+      return `- **${implementation}**: ${improvement.toFixed(2)}% mais lento`;
+    }).filter(Boolean)
+    .join("\n");
+
+  return `
+## 🏆 Análise de Resultados
+
+- **Maior Throughput (req/s)**: ${bestThroughput.implementation} (${bestThroughput.reqPerSec.toFixed(2)} req/s)
+- **Menor Latência Média**: ${bestLatency.implementation} (${bestLatency.avgLatency.toFixed(2)} ms)
+- **Comparação de Velocidade**:
+${improvements}
+
+## ⚠️ Resumo de Falhas
+${Object.entries(errorCounts)
+  .map(([impl, count]) => `- **${impl}**: ${count} erros`)
+  .join("\n")}
+${Object.entries(timeoutCounts)
+  .map(([impl, count]) => `- **${impl}**: ${count} timeouts`)
+  .join("\n")}
+  `;
+}
+
+/**
+ * Executa os benchmarks e gera o relatório.
  */
 (async () => {
   console.log("🚀 Iniciando benchmark...");
 
   const benchmarkResults: BenchmarkResult[] = [];
 
-  // Para cada implementação (SQLite em disco, SQLite em memória e Redis)
   for (const impl of IMPLEMENTATIONS) {
     for (const key of TEST_KEYS) {
       const postBody = {
@@ -89,7 +154,6 @@ async function runBenchmark(
 
       for (const connections of CONNECTIONS) {
         for (const duration of DURATIONS) {
-          // Teste de armazenamento (POST)
           console.log(
             `🔄 Testando POST ${impl.name} - ${connections} conexões - ${duration} segundos...`,
           );
@@ -103,11 +167,7 @@ async function runBenchmark(
             postBody,
           );
           benchmarkResults.push(benchmarkPost);
-          console.log(
-            `✅ POST Concluído - ${impl.name} - ${connections} conexões - ${duration} segundos`,
-          );
 
-          // Teste de leitura (GET)
           console.log(
             `🔄 Testando GET ${impl.name} - ${connections} conexões - ${duration} segundos...`,
           );
@@ -120,18 +180,16 @@ async function runBenchmark(
             key,
           );
           benchmarkResults.push(benchmarkGet);
-          console.log(
-            `✅ GET Concluído - ${impl.name} - ${connections} conexões - ${duration} segundos`,
-          );
         }
       }
     }
   }
 
-  // Gera o relatório em Markdown
+  const analysis = analyzeResults(benchmarkResults);
+
   const markdownContent = `# 🚀 Benchmark de Performance
 
-Este teste simula um cenário realista onde valores são armazenados via \`POST\` e consultados via \`GET\`, comparando as implementações de cache:
+Este teste compara as implementações de cache:
 
 - **SQLite (Disco)**
 - **SQLite (Memória)**
@@ -152,12 +210,13 @@ ${benchmarkResults
   )
   .join("\n")}
 
+${analysis}
+
 ---
 
 _Gerado automaticamente em ${new Date().toLocaleString()}_
 `;
 
-  const fileName = `benchmark-results-${new Date().getTime()}.md`;
-  fs.writeFileSync(fileName, markdownContent);
-  console.log(`✅ Teste concluído! Resultados salvos em \`${fileName}\`.`);
+  fs.writeFileSync(`benchmark-results-${Date.now()}.md`, markdownContent);
+  console.log("✅ Teste concluído! Resultados salvos.");
 })();
