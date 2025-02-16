@@ -1,11 +1,11 @@
 import { DatabaseSync } from "node:sqlite";
 
-const database = new DatabaseSync("./db.sqlite");
+const database = new DatabaseSync(":memory:");
 
 /**
- * Configura o banco de dados SQLite criando a tabela de cache, se necessário.
+ * Configura o banco de dados SQLite In-Memory criando a tabela de cache, se necessário.
  */
-export function sqliteCacheSetup() {
+export function sqliteInMemoryCacheSetup() {
   try {
     database.exec(`
       CREATE TABLE IF NOT EXISTS cache (
@@ -27,7 +27,7 @@ export function sqliteCacheSetup() {
  * @param {string} key - A chave do cache.
  * @returns {any} - O valor armazenado ou null se não existir ou estiver expirado.
  */
-export function sqliteGetValue(key: string) {
+export function sqliteInMemoryGetValue<T>(key: string): T | null {
   try {
     const row = database
       .prepare(
@@ -47,7 +47,7 @@ export function sqliteGetValue(key: string) {
  * Atualiza o valor se a chave já existir.
  * @param {Object} param0 - Objeto contendo key, value e expiresAt (em minutos).
  */
-export function sqliteSetValue({ key, value, expiresAt = 5 }): void {
+export function sqliteInMemorySetValue({ key, value, expiresAt = 5 }): void {
   try {
     const existing = database
       .prepare("SELECT 1 FROM cache WHERE key = ?")

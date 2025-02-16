@@ -6,7 +6,8 @@ const DURATIONS = [30, 60]; // duração de cada teste em segundos
 const CONNECTIONS = [50, 100, 250];
 const TEST_KEYS = ["bruno"];
 const IMPLEMENTATIONS = [
-  { name: "SQLite", route: "/sqlite" },
+  { name: "SQLite (Disk)", route: "/sqlite-in-disk" },
+  { name: "SQLite (Memory)", route: "/sqlite-in-memory" },
   { name: "Redis", route: "/redis" },
 ];
 
@@ -30,13 +31,12 @@ type BenchmarkResult = {
 async function runBenchmark(
   implementation: string,
   route: string,
-  method,
+  method: "GET" | "POST",
   connections: number,
   duration: number,
   key: string,
   bodyData: object | null = null,
 ): Promise<BenchmarkResult> {
-  const isPost = method === "POST";
   const url =
     method === "GET" ? `${BASE_URL}${route}?${key}` : `${BASE_URL}${route}`;
   const result = await autocannon({
@@ -44,7 +44,7 @@ async function runBenchmark(
     connections,
     duration,
     method,
-    ...(isPost
+    ...(bodyData
       ? {
           body: JSON.stringify(bodyData),
           headers: { "Content-Type": "application/json" },
@@ -68,31 +68,32 @@ async function runBenchmark(
 }
 
 /**
- * Executa os benchmarks simulando um cenário realista de armazenamento e leitura de dados,
- * para ambas as implementações: SQLite e Redis.
+ * Executa os benchmarks de maneira sequencial para evitar sobrecarga excessiva no servidor.
  */
 (async () => {
   console.log("🚀 Iniciando benchmark...");
 
-  const benchmarkPromises: BenchmarkResult[] = [];
+  const benchmarkResults: BenchmarkResult[] = [];
 
-  // Para cada implementação (SQLite e Redis)
+  // Para cada implementação (SQLite em disco, SQLite em memória e Redis)
   for (const impl of IMPLEMENTATIONS) {
-    // Para cada chave de teste
     for (const key of TEST_KEYS) {
       const postBody = {
         key,
         value: {
-          nome: key.charAt(0).toUpperCase() + key.slice(1), // Capitaliza o nome
+          nome: key.charAt(0).toUpperCase() + key.slice(1),
           sobrenome: "Teste",
-          idade: Math.floor(Math.random() * 40) + 20, // Gera uma idade aleatória entre 20 e 60
+          idade: Math.floor(Math.random() * 40) + 20,
         },
       };
 
       for (const connections of CONNECTIONS) {
         for (const duration of DURATIONS) {
-          // Teste de registro de valores (POST)
-          const benchmarkResultPost = await runBenchmark(
+          // Teste de armazenamento (POST)
+          console.log(
+            `🔄 Testando POST ${impl.name} - ${connections} conexões - ${duration} segundos...`,
+          );
+          const benchmarkPost = await runBenchmark(
             impl.name,
             impl.route,
             "POST",
@@ -101,13 +102,16 @@ async function runBenchmark(
             key,
             postBody,
           );
-          benchmarkPromises.push(benchmarkResultPost);
+          benchmarkResults.push(benchmarkPost);
           console.log(
-            `✅ Teste concluído! - POST ${impl.name} - ${key} - ${connections} conexões - ${duration} segundos`,
+            `✅ POST Concluído - ${impl.name} - ${connections} conexões - ${duration} segundos`,
           );
 
-          // Teste de leitura de valores (GET)
-          const benchmarkResultGet = await runBenchmark(
+          // Teste de leitura (GET)
+          console.log(
+            `🔄 Testando GET ${impl.name} - ${connections} conexões - ${duration} segundos...`,
+          );
+          const benchmarkGet = await runBenchmark(
             impl.name,
             impl.route,
             "GET",
@@ -115,27 +119,29 @@ async function runBenchmark(
             duration,
             key,
           );
-          benchmarkPromises.push(benchmarkResultGet);
+          benchmarkResults.push(benchmarkGet);
           console.log(
-            `✅ Teste concluído! - GET ${impl.name} - ${key} - ${connections} conexões - ${duration} segundos`,
+            `✅ GET Concluído - ${impl.name} - ${connections} conexões - ${duration} segundos`,
           );
         }
       }
     }
   }
 
-  const results = await Promise.all(benchmarkPromises);
-
-  // Gera o conteúdo do arquivo Markdown com os resultados dos benchmarks
+  // Gera o relatório em Markdown
   const markdownContent = `# 🚀 Benchmark de Performance
 
-Este teste simula um cenário realista onde valores são armazenados via \`POST\` e consultados via \`GET\`, comparando as implementações de cache com SQLite e Redis.
+Este teste simula um cenário realista onde valores são armazenados via \`POST\` e consultados via \`GET\`, comparando as implementações de cache:
+
+- **SQLite (Disco)**
+- **SQLite (Memória)**
+- **Redis**
 
 ## 📊 Resultados
 
-| Implementação | Método | Rota         | Chave | Conexões | Duração (s) | Req/s  | Latência Média (ms) | p99 (ms) | Erros | Timeouts |
-|---------------|--------|--------------|-------|----------|-------------|--------|---------------------|----------|-------|----------|
-${results
+| Implementação | Método | Rota               | Chave | Conexões | Duração (s) | Req/s  | Latência Média (ms) | p99 (ms) | Erros | Timeouts |
+|--------------|--------|--------------------|-------|----------|-------------|--------|---------------------|----------|-------|----------|
+${benchmarkResults
   .map(
     (r) =>
       `| ${r.implementation} | ${r.method} | ${r.route} | ${r.key} | ${r.connections} | ${r.duration} | ${r.requestsPerSecond.toFixed(
@@ -151,13 +157,7 @@ ${results
 _Gerado automaticamente em ${new Date().toLocaleString()}_
 `;
 
-  // Salva os resultados em um arquivo Markdown
-  fs.writeFileSync(
-    `benchmark-results-${new Date().getTime()}.md`,
-    markdownContent,
-  );
-
-  console.log(
-    "✅ Teste concluído! Resultados salvos em `benchmark-results.md`.",
-  );
+  const fileName = `benchmark-results-${new Date().getTime()}.md`;
+  fs.writeFileSync(fileName, markdownContent);
+  console.log(`✅ Teste concluído! Resultados salvos em \`${fileName}\`.`);
 })();

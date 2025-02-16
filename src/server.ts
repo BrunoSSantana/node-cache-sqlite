@@ -3,20 +3,27 @@ import { createServer } from "node:http";
 import {
   redisGetValue,
   redisSetValue,
-  sqliteGetValue,
-  sqliteSetValue,
+  sqliteInDiskCacheSetup,
+  sqliteInMemoryCacheSetup,
+  sqliteInDiskGetValue,
+  sqliteInMemoryGetValue,
 } from "./cache-db/index.ts";
+
+// Inicializa os bancos SQLite em disco e em memória
+sqliteInDiskCacheSetup();
+sqliteInMemoryCacheSetup();
 
 export const server = createServer(async (req, res) => {
   try {
     const url = new URL(req?.url || "", `http://${req.headers.host}`);
     const route = url.pathname;
 
-    // Verifica se a rota é para SQLite ou Redis
-    const isSqlite = route.startsWith("/sqlite");
+    // Verifica se a rota corresponde a um dos caches SQLite ou Redis
+    const isSqliteInDisk = route.startsWith("/sqlite-in-disk");
+    const isSqliteInMemory = route.startsWith("/sqlite-in-memory");
     const isRedis = route.startsWith("/redis");
 
-    if (!isSqlite && !isRedis) {
+    if (!isSqliteInDisk && !isSqliteInMemory && !isRedis) {
       res.writeHead(404, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ error: "Rota não encontrada" }));
     }
@@ -25,11 +32,12 @@ export const server = createServer(async (req, res) => {
       const params = Object.fromEntries(url.searchParams.entries());
       const dataHandle: Record<string, unknown> = {};
 
-      // Para cada chave passada na query string, chama a função apropriada
       for (const key of Object.keys(params)) {
         const keyValue = key.replace("?", "").replace("/", "");
-        if (isSqlite) {
-          dataHandle[keyValue] = await sqliteGetValue(keyValue);
+        if (isSqliteInDisk) {
+          dataHandle[keyValue] = await sqliteInDiskGetValue(keyValue);
+        } else if (isSqliteInMemory) {
+          dataHandle[keyValue] = await sqliteInMemoryGetValue(keyValue);
         } else if (isRedis) {
           dataHandle[keyValue] = await redisGetValue(keyValue);
         }
@@ -50,9 +58,12 @@ export const server = createServer(async (req, res) => {
 
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       let item: any | null = null;
-      if (isSqlite) {
-        sqliteSetValue({ key: data.key, value: data.value, expiresAt: 5 });
-        item = await sqliteGetValue(data.key);
+      if (isSqliteInDisk) {
+        sqliteInDiskCacheSetup(); // Garante que o setup foi feito
+        item = await sqliteInDiskGetValue(data.key);
+      } else if (isSqliteInMemory) {
+        sqliteInMemoryCacheSetup(); // Garante que o setup foi feito
+        item = await sqliteInMemoryGetValue(data.key);
       } else if (isRedis) {
         redisSetValue({ key: data.key, value: data.value, expiresAt: 5 });
         item = await redisGetValue(data.key);
